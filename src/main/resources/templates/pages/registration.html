@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Store</title>
+    <link href="css/styles.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="css/bootstrap-glyphicons.css">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container px-4 px-lg-5">
+        <a class="navbar-brand" href="/">Food Store</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span
+                class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">Категорії</a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Піца</a></li>
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Салати</a></li>
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Перші страви</a></li>
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Другі страви</a></li>
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Десерти</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div id="cart">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                    <li class="nav-item dropdown" style="margin-right: 20px;">
+                        <a class="nav-link dropdown-toggle" id="nav" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false" onclick="updateCart()">Кошик</a>
+                        <ul class="dropdown-menu" id="cart-items" aria-labelledby="nav">
+                            <!-- Здесь будут отображаться товары в корзине -->
+                        </ul>
+
+                    </li>
+                </ul>
+
+                <script th:inline="javascript">
+                    const cartItemsUl = document.getElementById('cart-items');
+
+                    function updateCart() {
+                        let containElements = false;
+                        fetch('../cart/items')
+                            .then(response => response.json())
+                            .then(cartItems => {
+                                cartItemsUl.innerHTML = '';
+                                cartItems.forEach(cartItem => {
+                                    containElements = true;
+                                    const cartItemLi = document.createElement('li');
+                                    cartItemLi.style.width = 'max-content'
+                                    cartItemLi.style.margin = '10px'
+
+                                    cartItemLi.innerHTML = `
+                    <span>${cartItem.productName} - ${cartItem.quantity} pcs</span>
+                    <button onclick="removeFromCart(${cartItem.id})">Remove</button>`;
+                                    cartItemsUl.appendChild(cartItemLi);
+                                });
+
+                                const btn = document.createElement('button');
+                                btn.classList.add('btn', 'btn-outline-dark', 'mt-auto', 'eBtn', 'buy-btn');
+                                btn.innerHTML = 'Замовити';
+                                btn.addEventListener('click', makeOrder)
+                                if (!containElements) {
+                                    btn.style.display = 'none';
+                                }
+                                cartItemsUl.appendChild(btn)
+
+                            });
+                    }
+
+                    function makeOrder() {
+                        fetch('../makeOrder', {
+                            method: 'POST',
+                        });
+                        showMessage('Ваше замовлення обробляється. Дякуємо!');
+                    }
+
+                    function removeFromCart(id) {
+                        fetch(`../cart/remove/${id}`, {
+                            method: 'DELETE'
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    updateCart();
+                                }
+                            });
+                    }
+                </script>
+            </div>
+
+            <div class="col-sm-3 col-md-3">
+                <form class="navbar-form" role="search" action="/search">
+                    <input type="hidden" name="pages" value="1">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Пошук" name="param">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="submit">
+                                <span class="glyphicon glyphicon-search"></span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div sec:authorize="isAnonymous()">
+                <a class="btn btn-primary" type="button" style="background-color: blueviolet; border-color: violet"
+                   th:href="@{/login}">Логін</a>
+                <a class="btn btn-primary" type="button" style="background-color: blueviolet; border-color: violet"
+                   th:href="@{/registration}">Реєстрація</a>
+            </div>
+            <div sec:authorize="isAuthenticated()">
+                <a class="btn btn-primary" type="button" style="background-color: blueviolet; border-color: violet" th:href="@{/logout}">Вихід</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<section id="hero" class="vh-100">
+    <div class="container" style="height: 95% !important;">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="card" style="background: darkorange; border-radius: 1rem; border-color: coral">
+                    <div class="card-body p-5 text-center">
+
+                        <div class="mb-md-5 mt-md-4 pb-5">
+                            <form th:action="@{/registration-user}" th:method="POST" th:object="${user}">
+                                <h2 class="fw-bold mb-2 text-uppercase">Новий юзер</h2>
+                                <p class="text-white-50 mb-5">Реєстрація</p>
+
+                                <div style="color:red; background-color: cornsilk; font: initial; margin-bottom: 5px;" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                                <div class="form-outline form-white mb-4">
+                                    <input type="text" id="typeUsername" name="username"  th:field="*{username}"
+                                           class="form-control form-control-lg"/>
+                                    <label class="form-label" for="typeUsername">Логін</label>
+                                </div>
+
+                                <div style="color:red; background-color: cornsilk; font: initial; margin-bottom: 5px;" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                                <div class="form-outline form-white mb-4">
+                                    <input type="password" id="typePasswordX" name="password" th:field="*{password}"
+                                           class="form-control form-control-lg"/>
+                                    <label class="form-label" for="typePasswordX">Пароль</label>
+                                </div>
+
+                                <div class="form-outline form-white mb-4">
+                                    <input type="password" id="typePasswordXZ" name="passwordSecondTime"
+                                           class="form-control form-control-lg"/>
+                                    <label class="form-label" for="typePasswordXZ">Повторіть пароль</label>
+                                </div>
+
+                                <input class="btn btn-outline-light btn-lg px-5" type="submit" value="Зареєструватися">
+                            </form>
+                        </div>
+
+                        <div>
+                            <p class="mb-0">Вже маєте аккаунт? <a  th:href="@{/login}"
+                                                                        class="text-white-50 fw-bold">Вхід</a>
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="py-5 bg-dark">
+    <div class="container"><p class="m-0 text-center text-white">Copyright &copy; Store 2023</p></div>
+</footer>
+
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha.2/js/bootstrap.min.js"></script>
+<script th:src="@{js/bootstrap.bundle.min.js}" src="../static/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

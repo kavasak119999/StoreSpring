@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <meta name="description" content=""/>
+    <meta name="author" content="Maksym Fylypchuk"/>
+    <title>Store</title>
+    <link rel="stylesheet" href="css/bootstrap-grid.css"/>
+    <link rel="stylesheet" href="css/jquery.modal.css"/>
+    <link rel="stylesheet" href="css/bootstrap-glyphicons.css">
+    <link href="css/styles.css" rel="stylesheet"/>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container px-4 px-lg-5">
+        <a class="navbar-brand" href="/">Food Store</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span
+                class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">Категорії</a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Піца</a></li>
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Салати</a></li>
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Перші страви</a></li>
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Другі страви</a></li>
+                        <li><a class="dropdown-item" th:href="@{/catalog(category=name)}">Десерти</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div id="cart">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                    <li class="nav-item dropdown" style="margin-right: 20px;">
+                        <a class="nav-link dropdown-toggle" id="nav" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false" onclick="updateCart()">Кошик</a>
+                        <ul class="dropdown-menu" id="cart-items" aria-labelledby="nav">
+                            <!-- Здесь будут отображаться товары в корзине -->
+                        </ul>
+
+                    </li>
+                </ul>
+
+                <script th:inline="javascript">
+                    const cartItemsUl = document.getElementById('cart-items');
+
+                    function updateCart() {
+                        let containElements = false;
+                        fetch('../cart/items')
+                            .then(response => response.json())
+                            .then(cartItems => {
+                                cartItemsUl.innerHTML = '';
+                                cartItems.forEach(cartItem => {
+                                    containElements = true;
+                                    const cartItemLi = document.createElement('li');
+                                    cartItemLi.style.width = 'max-content'
+                                    cartItemLi.style.margin = '10px'
+
+                                    cartItemLi.innerHTML = `
+                    <span>${cartItem.productName} - ${cartItem.quantity} шт.</span>
+                    <button onclick="removeFromCart(${cartItem.id})">Видалити</button>`;
+                                    cartItemsUl.appendChild(cartItemLi);
+                                });
+
+                                const btn = document.createElement('button');
+                                btn.classList.add('btn', 'btn-outline-dark', 'mt-auto', 'eBtn', 'buy-btn');
+                                btn.innerHTML = 'Замовити';
+                                btn.addEventListener('click', makeOrder)
+                                if (!containElements) {
+                                    btn.style.display = 'none';
+                                }
+                                cartItemsUl.appendChild(btn)
+
+                            });
+                    }
+
+                    function makeOrder() {
+                        fetch('../makeOrder', {
+                            method: 'POST',
+                        });
+                        showMessage('Ваше замовлення обробляється. Дякуємо!');
+                    }
+
+                    function removeFromCart(id) {
+                        fetch(`../cart/remove/${id}`, {
+                            method: 'DELETE'
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    updateCart();
+                                }
+                            });
+                    }
+                </script>
+            </div>
+
+            <div class="col-sm-3 col-md-3">
+                <form class="navbar-form" role="search" action="/search">
+                    <input type="hidden" name="pages" value="1">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Пошук" name="param">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="submit">
+                                <span class="glyphicon glyphicon-search"></span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div sec:authorize="hasRole('ROLE_ADMIN')">
+                <a class="btn btn-primary" type="button" style="background-color: blueviolet; border-color: violet"
+                   th:href="@{/orders/}">Замовлення</a>
+            </div>
+            <div sec:authorize="isAnonymous()">
+                <a class="btn btn-primary" type="button" style="background-color: blueviolet; border-color: violet"
+                   th:href="@{/login}">Логін</a>
+                <a class="btn btn-primary" type="button" style="background-color: blueviolet; border-color: violet"
+                   th:href="@{/registration}">Реєстрація</a>
+            </div>
+            <div sec:authorize="isAuthenticated()">
+                <a class="btn btn-primary" type="button" style="background-color: blueviolet; border-color: violet"
+                   th:href="@{/logout}">Вихід</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<header class="py-5" style="background: darkorange">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Food Store</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Фастфуд – це мистецтво отримувати задоволення у русі</p>
+        </div>
+    </div>
+</header>
+
+<section class="py-5">
+    <p class="t lead fw-normal text-black-50 mb-0"
+       th:text="${searchValue != null} ? 'Результат пошуку: «' + ${searchValue} + '»': ''"></p>
+    <div class="container px-4 px-lg-5 mt-5">
+        <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+            <tr th:each="product: ${data}">
+                <div class="col mb-5">
+                    <div class="card h-100 w-75">
+                        <img class="card-img-top"
+                             src="https://eu.ooni.com/cdn/shop/articles/20220211142754-margherita-9920.jpg?v=1644590277"
+                             alt="..."/>
+                        <div class="card-body p-4">
+                            <div class="text-center">
+                                <p class="fw-bolder"
+                                   th:text="${product.name}"></p>
+                                <br>
+                                $<a th:text="${product.price}"></a>
+                            </div>
+                        </div>
+                        <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                            <div class="text-center">
+                                <button type="button"
+                                        class="open-AddProductDialog btn btn-outline-dark mt-auto eBtn"
+                                        data-bs-toggle="modal"
+                                        th:attr="data-bs-target='#modal' + ${product.id}"> Купити
+                                </button>
+
+                                <div
+                                        class="modal common-modal fade showModel in"
+                                        th:id="modal + ${product.id}"
+                                        style="height: fit-content; margin-right: auto; margin-left: auto; margin-top: 5%"
+                                        tabindex="-1"
+                                        role="dialog"
+                                        aria-labelledby="exampleModalCenterTitle"
+                                        aria-hidden="true"
+                                >
+                                    <div class="modal-dialog modal-content" role="document">
+                                        <div class="modal-body">
+                                            <img class="imgh" style="margin-left: 0 !important; width: 400px;"
+                                                 src="https://eu.ooni.com/cdn/shop/articles/20220211142754-margherita-9920.jpg?v=1644590277"
+                                                 alt="..."/>
+                                            <p class="fw-bolder"
+                                               style=" font-size: 40px; justify-content: center; display: flex;"
+                                               th:text="${product.name}"></p>
+                                            <div class="text-start">
+                                                <button class="btn btn-outline-dark mt-auto eBtn"
+                                                        style="display: block; margin-left: auto; margin-right: auto">
+                                                    Склад продукту
+                                                </button>
+                                            </div>
+                                            <br><br>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <h1 th:id="price + ${product.id}" style="margin-right: auto;"
+                                                th:text="'$' + ${product.price}"></h1>
+                                            <p>Кількість
+                                                <input type="number" class="inputQuantity"
+                                                       th:attr="onchange=|changePrice('${product.id}','${product.price}')|"
+                                                       style="width: 50px" th:id="inputQuantity + ${product.id}"
+                                                       max="10" min="1" value="1"></p>
+                                            <script>
+                                                function changePrice(num, price) {
+                                                    let priceElement = document.getElementById('price' + num);
+
+                                                    let quantityElement = document.getElementById('inputQuantity' + num);
+                                                    let quantityValue = parseInt(quantityElement.value);
+
+                                                    if (!isNaN(price) && !isNaN(quantityValue)) { // Проверяем, что удалось извлечь числа
+                                                        let totalPrice = price * quantityValue;
+                                                        priceElement.innerText = '$' + totalPrice.toFixed(2); // Отображаем общую стоимость
+                                                    }
+                                                }
+                                            </script>
+
+                                            <div class="row" style="width: min-content">
+                                                <button class="btn btn-primary close-button"
+                                                        style="background-color: limegreen; border: 0; margin-bottom: inherit"
+                                                        th:attr="onclick=|addToCart('${product.id}','${product.name}','${product.price}')|">
+                                                    Підтвердити
+                                                </button>
+                                                <a class="btn btn-primary close-button" type="button"
+                                                   style="background-color: red; color: white; border: 0; margin-right:
+                                            auto;">Відмінити</a>
+                                            </div>
+
+                                            <script th:inline="javascript">
+                                                function addToCart(productId, productName, productPrice) {
+                                                    const cartItem = {
+                                                        productId: productId,
+                                                        productName: productName,
+                                                        price: productPrice,
+                                                        quantity: document.getElementById('inputQuantity' + productId).value
+                                                    };
+
+                                                    fetch('/cart/add', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/json'
+                                                        },
+                                                        body: JSON.stringify(cartItem)
+                                                    });
+                                                    updateCart()
+                                                    showMessage('Товар додан до вашого кошика.');
+                                                }
+
+                                                function showMessage(message) {
+                                                    alert(message)
+                                                }
+                                            </script>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+    </tr>
+    </div>
+    </div>
+</section>
+
+<div class="pagin">
+    <ul class="nav nav-pills">
+        <li class="nav-item"
+            th:each="i : ${#numbers.sequence(0, totalPages-1)}">
+            <a th:if="${searchValue != null && totalPages gt 1}"
+               th:href="@{/search(pages=${i} + 1, param=${searchValue})}"
+               th:text="${i} + 1" class="nav-link"
+               th:classappend="${currentPage}-1==${i}?'active':''"></a>
+            <a th:if="${searchValue == null && totalPages gt 1}" th:href="@{/(pages=${i} + 1)}"
+               th:text="${i} + 1" class="nav-link"
+               th:classappend="${currentPage}-1==${i}?'active':''"></a>
+    </ul>
+</div>
+
+<!-- Footer-->
+<footer class="py-5 bg-dark">
+    <div class="container"><p class="m-0 text-center text-white">Copyright &copy; Store 2023</p></div>
+</footer>
+<!-- Bootstrap core JS-->
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha.2/js/bootstrap.min.js"></script>
+<script th:src="@{js/bootstrap.bundle.min.js}" src="../static/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{js/main.js}" type="text/javascript" src="../static/js/main.js"></script>
+</body>
+</html>

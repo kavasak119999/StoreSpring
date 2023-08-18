@@ -1,0 +1,18 @@
+server:
+    port: 8070
+
+spring:
+  session:
+    store-type: none
+  thymeleaf:
+    prefix: classpath:/templates/
+
+  datasource:
+    url: "jdbc:mysql://localhost:3306/db"
+    username: ""
+    password: ""
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  sql:
+    init:
+      mode: always
